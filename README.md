@@ -27,9 +27,11 @@ pet.py
 
 ## Interact
 - You can touch your pet and she/he will give feedback.
+- You can add the thing that your pet likes in the mouse/ (must in .png format), and when your mouse on your pet, magic happened!
 
 ## Change name
 - You can right-click your pet and change the name to get your own baby.
+
 
 # To be continued...
 

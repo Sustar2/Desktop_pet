@@ -13,12 +13,14 @@ import os
 import random
 import json
 import re
+import glob
 from PyQt6.QtWidgets import QApplication, QWidget, QLabel, QMenu, QInputDialog
 from PyQt6.QtCore import Qt, QPoint, QTimer, QSize
-from PyQt6.QtGui import QPixmap, QAction, QMovie
+from PyQt6.QtGui import QPixmap, QAction, QMovie, QCursor
 
 IMAGE_FOLDER='images'
 AUX_FOLDER='auxiliary'
+MOUSE='mouse'
 
 class DesktopPet(QWidget):
     def __init__(self):
@@ -39,6 +41,8 @@ class DesktopPet(QWidget):
         except Exception as e:
             print(f"读取图片失败: {e}")
             self.image_paths = []
+        self.mouse_folder = MOUSE
+
         self.current_index = 0  # 默认显示列表里的第 0 张（即 cat1.png）
 
         # 定义配置文件的路径
@@ -51,6 +55,13 @@ class DesktopPet(QWidget):
         self.load_config()
 
         self.init_ui()
+
+        # --- 侧边隐藏功能变量 ---
+        self.is_hidden = False
+        self.hide_timer = QTimer(self)
+        self.hide_timer.setInterval(15000)  # 15秒无交互自动隐藏
+        self.hide_timer.timeout.connect(self.shrink_to_left)
+        self.hide_timer.start()
 
     def load_config(self):
         if not os.path.exists(self.config_path):
@@ -92,28 +103,31 @@ class DesktopPet(QWidget):
         y = int(screen_geo.height() * 0.8 - self.height() / 2)
         self.move(x, y)
 
-    # def update_image(self):
-    #     """专门用来加载和刷新猫咪图片的方法"""
-    #     if not self.image_paths: return
-    #
-    #     current_image = self.image_paths[self.current_index]
-    #
-    #     # 1. 打印它到底在尝试加载哪个绝对路径！
-    #     print(f"🔎 正在尝试加载图片路径: {current_image}")
-    #
-    #     pixmap = QPixmap(current_image)
-    #
-    #     # 2. 拦截检查：如果加载出来是空的，立刻发出警告
-    #     if pixmap.isNull():
-    #         print(f"❌ 警告：路径正确，但 PyQt 无法解析这张图片！(可能是格式不对，或缺少图像插件)")
-    #         return  # 加载失败就直接停止，防止后面报错
-    #
-    #     # 如果你取消了下面这行的注释，请确保它放在 isNull 拦截的后面！
-    #     pixmap = pixmap.scaledToWidth(150, Qt.TransformationMode.SmoothTransformation)
-    #
-    #     self.image_label.setPixmap(pixmap)
-    #     self.image_label.adjustSize()
-    #     self.resize(self.image_label.size())
+        # ==========================================
+        # 🌟 新增：设置专属的逗猫棒鼠标指针
+        # ==========================================
+        teaser_path = glob.glob(os.path.join(self.mouse_folder, "*.png"))[0]
+
+        # 检查图片是否存在
+        if os.path.exists(teaser_path):
+            teaser_pixmap = QPixmap(teaser_path)
+
+            # 强制把图片缩放到 32x32 像素，防止指针太大挡住视线
+            teaser_pixmap = teaser_pixmap.scaled(
+                32, 32,
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation
+            )
+
+            # 创建自定义鼠标，并设置热点（鼠标真正生效的点击位置，0,0 代表图片的左上角）
+            custom_cursor = QCursor(teaser_pixmap, 0, 0)
+
+            # 把这个指针应用到整个桌宠窗口上！
+            self.setCursor(custom_cursor)
+        else:
+            # 如果没找到图片，就默认变成一只小手 👆 作为保底方案
+            self.setCursor(Qt.CursorShape.PointingHandCursor)
+            print("⚠️ 未找到 food，已使用默认小手指针。")
 
     def update_image(self):
         """智能加载：自动识别并显示静态图或GIF动图"""
@@ -231,6 +245,9 @@ class DesktopPet(QWidget):
                 self.update_image()
             self.show_bubble()
 
+        # 只要有点按，就重新计时
+        self.hide_timer.start()
+
     def mouseMoveEvent(self, event):
         if not self._drag_pos.isNull() and event.buttons() == Qt.MouseButton.LeftButton:
             delta = event.globalPosition().toPoint() - self._drag_pos
@@ -273,6 +290,55 @@ class DesktopPet(QWidget):
             self.pet_name = new_name.strip()
             self.save_config()
             self.show_bubble(f"好耶！以后我就叫 {self.pet_name} 啦！")
+
+    def shrink_to_left(self):
+        """收缩到左侧，隐藏 8/10 的身体"""
+        if not self.is_hidden:
+            # 记录收缩前的位置（当前的 x 坐标）
+            self.old_x = self.x()
+
+            # 计算收缩位置：
+            # 隐藏 8/10，意味着向左偏移窗口宽度的 0.8
+            # 留在屏幕里的就是剩下的 2/10
+            target_x = -int(self.width() * 0.8)
+
+            # 我们可以加一个简单的平滑移动（可选）
+            self.move(target_x, self.y())
+
+            # 隐藏时稍微变淡，增加“躲藏”的感觉
+            self.setWindowOpacity(0.5)
+            self.is_hidden = True
+
+            # 停止隐藏计时器
+            self.hide_timer.stop()
+
+    def expand_from_left(self):
+        """从左侧完全现身"""
+        if self.is_hidden:
+            # 恢复到 x = 0 (紧贴左边缘) 或者之前的 old_x
+            # 通常建议回到 x = 0，看起来更像“跳出来了”
+            self.move(0, self.y())
+
+            # 恢复完全不透明
+            self.setWindowOpacity(1.0)
+            self.is_hidden = False
+
+            # 既然跳出来了，就打个招呼
+            self.show_bubble("看我瞬间移动！喵~")
+
+            # 重新开启 15 秒发呆计时
+            self.hide_timer.start()
+
+    def enterEvent(self, event):
+        """当鼠标移入时触发"""
+        super().enterEvent(event)
+        # 如果是收缩状态，就弹出来
+        if self.is_hidden:
+            self.expand_from_left()
+        else:
+            # 只要鼠标在它身上，就重置计时器，不让它缩回去
+            self.hide_timer.start()
+
 
 
 if __name__ == '__main__':
