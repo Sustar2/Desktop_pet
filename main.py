@@ -294,7 +294,6 @@ class DesktopPet(QWidget):
         self.hide_timer.start()
         self.show_bubble("捉到你啦~")
 
-
 class TailWidget(QWidget):
     """显示在屏幕左侧边缘的尾巴替身"""
 

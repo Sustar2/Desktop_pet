@@ -17,8 +17,9 @@ pip install PyQt6
 - The supported format is ['*.png', '*.jpg', '*.jpeg', '*.gif']
 
 # Run
+
 ```aiignore
-pet.py
+main.py
 ```
 
 # Function
