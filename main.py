@@ -18,10 +18,38 @@ from PyQt6.QtWidgets import QApplication, QWidget, QLabel, QMenu, QGraphicsDropS
 from PyQt6.QtCore import Qt, QPoint, QTimer, QSize
 from PyQt6.QtGui import QPixmap, QAction, QMovie, QCursor, QColor
 
-IMAGE_FOLDER = 'images'
+def resource_path(relative_path):
+    """获取打包后资源的绝对路径（只读临时目录）"""
+    try:
+        base_path = sys._MEIPASS          # PyInstaller 创建的临时目录
+    except AttributeError:
+        base_path = os.path.abspath(".")  # 开发环境
+    return os.path.join(base_path, relative_path)
+
+def get_resource_folder(folder_name):
+    """
+    优先返回可执行文件同目录下的文件夹（用户可修改），
+    如果不存在或为空，则回退到打包内置资源。
+    """
+    # 获取可执行文件所在的目录（打包后为 exe 所在目录；开发环境为脚本目录）
+    if getattr(sys, 'frozen', False):
+        base_dir = os.path.dirname(sys.executable)
+    else:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+
+    external = os.path.join(base_dir, folder_name)
+    # 如果外部文件夹存在并且里面至少有一个文件，就使用它
+    if os.path.exists(external) and os.listdir(external):
+        return external
+    else:
+        # 否则使用打包内置资源（通过 resource_path）
+        return resource_path(folder_name)
+
+IMAGE_FOLDER = get_resource_folder('images')
+MOUSE = get_resource_folder('mouse')
+TAIL = get_resource_folder('tails')
 AUX_FOLDER = 'auxiliary'
-MOUSE = 'mouse'
-TAIL = 'tails'
+
 
 class DesktopPet(QWidget):
     def __init__(self):
