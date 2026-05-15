@@ -3,3 +3,9 @@ images/*
 
 # 2. 唯独不忽略（保留）刚才创建的占位文件
 !images/.gitkeep
+
+# 1. 忽略 my_folder 文件夹下的所有内容
+auxiliary/*
+
+# 2. 唯独不忽略（保留）刚才创建的占位文件
+!auxiliary/.gitkeep
