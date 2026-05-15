@@ -290,34 +290,36 @@ class DesktopPet(QWidget):
 
     # ---- 🌟 核心：瞬间贴墙 / 瞬间弹出 ----
     def dock_to_side(self):
-        """立即完全隐藏主窗口，并在左侧显示尾巴"""
+        """立即隐藏主窗口，并在左侧显示尾巴"""
         if self.is_docked:
             return
         self.is_docked = True
         self.hide_timer.stop()
 
-        # 移到屏幕左侧之外（确保右边缘也不在屏幕内）
-        self.move(-self.width() - 50, self.y())
-        self.setWindowOpacity(0.0)
+        # 记录当前 y 坐标（供弹出时使用）
+        self.last_y = self.y()
 
-        # 显示尾巴
-        self.tail_widget.move(0, self.y())
+        # 彻底隐藏主窗口
+        self.hide()
+
+        # 显示尾巴，贴在屏幕左边
+        self.tail_widget.move(0, self.last_y)
         self.tail_widget.show()
 
     def undock_from_side(self):
+        """鼠标碰到/点击尾巴后，立即弹出主窗口，隐藏尾巴"""
         if not self.is_docked:
             return
         self.is_docked = False
 
         self.tail_widget.hide()
 
-        self.setWindowOpacity(1.0)
-        self.move(0, self.tail_widget.y())
-
-        self.hide()
-        self.show()
-        self.raise_()
-        self.update()
+        # 恢复主窗口到屏幕边缘，使用之前保存的 y 坐标
+        self.move(0, self.last_y)
+        self.setWindowOpacity(1.0)  # 确保不透明
+        self.show()  # 重新显示
+        self.raise_()  # 提到最上层
+        self.update()  # 立即重绘
 
         self.hide_timer.start()
         self.show_bubble("捉到你啦~")
