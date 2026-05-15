@@ -9,3 +9,13 @@ auxiliary/*
 
 # 2. 唯独不忽略（保留）刚才创建的占位文件
 !auxiliary/.gitkeep
+
+mouse/*
+
+# 2. 唯独不忽略（保留）刚才创建的占位文件
+!mouse/.gitkeep
+
+tails/*
+
+# 2. 唯独不忽略（保留）刚才创建的占位文件
+!tails/.gitkeep
