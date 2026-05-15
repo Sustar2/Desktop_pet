@@ -14,8 +14,8 @@ import random
 import json
 import re
 from PyQt6.QtWidgets import QApplication, QWidget, QLabel, QMenu, QInputDialog
-from PyQt6.QtCore import Qt, QPoint, QTimer
-from PyQt6.QtGui import QPixmap, QAction
+from PyQt6.QtCore import Qt, QPoint, QTimer, QSize
+from PyQt6.QtGui import QPixmap, QAction, QMovie
 
 IMAGE_FOLDER='images'
 AUX_FOLDER='auxiliary'
@@ -92,26 +92,87 @@ class DesktopPet(QWidget):
         y = int(screen_geo.height() * 0.8 - self.height() / 2)
         self.move(x, y)
 
+    # def update_image(self):
+    #     """专门用来加载和刷新猫咪图片的方法"""
+    #     if not self.image_paths: return
+    #
+    #     current_image = self.image_paths[self.current_index]
+    #
+    #     # 1. 打印它到底在尝试加载哪个绝对路径！
+    #     print(f"🔎 正在尝试加载图片路径: {current_image}")
+    #
+    #     pixmap = QPixmap(current_image)
+    #
+    #     # 2. 拦截检查：如果加载出来是空的，立刻发出警告
+    #     if pixmap.isNull():
+    #         print(f"❌ 警告：路径正确，但 PyQt 无法解析这张图片！(可能是格式不对，或缺少图像插件)")
+    #         return  # 加载失败就直接停止，防止后面报错
+    #
+    #     # 如果你取消了下面这行的注释，请确保它放在 isNull 拦截的后面！
+    #     pixmap = pixmap.scaledToWidth(150, Qt.TransformationMode.SmoothTransformation)
+    #
+    #     self.image_label.setPixmap(pixmap)
+    #     self.image_label.adjustSize()
+    #     self.resize(self.image_label.size())
+
     def update_image(self):
-        """专门用来加载和刷新猫咪图片的方法"""
+        """智能加载：自动识别并显示静态图或GIF动图"""
         if not self.image_paths: return
 
         current_image = self.image_paths[self.current_index]
 
-        # 1. 打印它到底在尝试加载哪个绝对路径！
-        print(f"🔎 正在尝试加载图片路径: {current_image}")
+        # 1. 每次切换前，先“打扫卫生”
+        # 如果之前正在播放 GIF，先把它停掉并清理内存，防止两个动画打架
+        if hasattr(self, 'movie') and self.movie:
+            self.movie.stop()
+            self.movie.deleteLater()
+            self.movie = None  # 重置为空
 
-        pixmap = QPixmap(current_image)
+        # 2. 智能判断后缀名
+        if current_image.lower().endswith('.gif'):
+            # =========================
+            # 🎬 路线 A：处理 GIF 动图
+            # =========================
+            self.movie = QMovie(current_image)
 
-        # 2. 拦截检查：如果加载出来是空的，立刻发出警告
-        if pixmap.isNull():
-            print(f"❌ 警告：路径正确，但 PyQt 无法解析这张图片！(可能是格式不对，或缺少图像插件)")
-            return  # 加载失败就直接停止，防止后面报错
+            if not self.movie.isValid():
+                print(f"❌ 警告：无法解析 GIF 文件: {current_image}")
+                return
 
-        # 如果你取消了下面这行的注释，请确保它放在 isNull 拦截的后面！
-        pixmap = pixmap.scaledToWidth(150, Qt.TransformationMode.SmoothTransformation)
+            # ==========================================
+            # 🌟 新增：在这里修改 GIF 的尺寸！
+            # 设定你想要的固定宽度（比如 150）
+            target_width = 150
 
-        self.image_label.setPixmap(pixmap)
+            # 让程序先“看”一眼 GIF 的第一帧，以便获取它的原始尺寸
+            self.movie.jumpToFrame(0)
+            original_size = self.movie.currentImage().size()
+
+            # 如果成功获取到了原始尺寸，就按比例计算出高度，并设置新的尺寸
+            if original_size.width() > 0:
+                target_height = int(target_width * original_size.height() / original_size.width())
+                self.movie.setScaledSize(QSize(target_width, target_height))
+            # ==========================================
+
+            self.image_label.setMovie(self.movie)
+            self.movie.start()  # 动图必须调用 start 才能播放
+
+        else:
+            # =========================
+            # 🖼️ 路线 B：处理静态图片
+            # =========================
+            pixmap = QPixmap(current_image)
+
+            if pixmap.isNull():
+                print(f"❌ 警告：无法解析静态图片: {current_image}")
+                return
+
+            # 如果需要缩放静态图片，可以在这里加：
+            pixmap = pixmap.scaledToWidth(150, Qt.TransformationMode.SmoothTransformation)
+
+            self.image_label.setPixmap(pixmap)
+
+        # 3. 统一调整窗口大小以适应当前显示的图片或动图
         self.image_label.adjustSize()
         self.resize(self.image_label.size())
 

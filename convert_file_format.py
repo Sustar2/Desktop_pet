@@ -25,4 +25,4 @@ def convert_mp4_to_gif(mp4_path):
 
 
 if __name__ == '__main__':
-    convert_mp4_to_gif('../desktop_pet/images/neko1.1.mp4')
+    convert_mp4_to_gif('../desktop_pet/images/neko1.mp4')
