@@ -8,18 +8,19 @@
 @Date    ：2026/5/15 14:24 
 @Desc    :
 """
-import sys
+import sys, os
 from PyQt6.QtWidgets import QApplication, QWidget, QLabel
 from PyQt6.QtCore import Qt, QPoint
 from PyQt6.QtGui import QPixmap
 
+IMAGE_FOLDER='images'
 
 class DesktopPet(QWidget):
     def __init__(self):
         super().__init__()
 
         # 1. 准备图片列表和当前索引
-        self.image_paths = ["neko1.png", "neko2.png", "neko3.png", "neko4.png"]
+        self.image_paths = [os.path.join(IMAGE_FOLDER, path) for path in os.listdir(IMAGE_FOLDER)]
         self.current_index = 0  # 默认显示列表里的第 0 张（即 cat1.png）
 
         self.init_ui()
