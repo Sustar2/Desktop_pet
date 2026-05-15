@@ -27,7 +27,8 @@ pet.py
 
 ## Interact
 - You can touch your pet and she/he will give feedback.
-- You can add the thing that your pet likes in the mouse/ (must in .png format), and when your mouse on your pet, magic happened!
+- You can add the thing that your pet likes in the **mouse/** (must in .png format), and when your mouse on your pet, magic happened!
+- Your pet will hide if you don't interact with it for 15s. You can add interesting images, such as tails, to the **tails/** (must in .png format) to customize what is displayed when the pet hides. 
 
 ## Change name
 - You can right-click your pet and change the name to get your own baby.
